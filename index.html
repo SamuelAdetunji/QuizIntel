@@ -247,7 +247,7 @@
       <button class="admin-btn" id="admin-lock-btn">🔒 Admin</button>
     </div>
     <div id="sheet-panel" class="sheet-section">
-      <div class="sheet-label">📄 Google Sheets CSV URL (with 'level' column)</div>
+      <div class="sheet-label">📄 Google Sheets CSV URL </div>
       <div class="sheet-input-group">
         <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
         <button class="btn-sheet-save" id="save-sheet-btn">Save</button>
@@ -313,7 +313,7 @@
 </div>
 
 <script>
-  // ---------------------- FALLBACK QUESTION BANKS (rich, with level property) ----------------------
+  // ---------------------- FALLBACK QUESTION BANKS (same as original, shortened for brevity) ----------------------
   const FALLBACK = {
   elementary: [
     { topic: "English", diff: "easy", q: "What is a person, place, or thing called?", opts: ["Verb", "Noun", "Adjective", "Pronoun"], ans: 1, pts: 8, level: "elementary" },
@@ -380,7 +380,6 @@
     { topic: "Govt", diff: "medium", q: "Who appoints the Ministers in Nigeria?", opts: ["The Senate", "The President", "The Chief Justice", "The Governors"], ans: 1, pts: 10, level: "highschool" },
     { topic: "Science", diff: "medium", q: "Which part of the cell is the 'brain' of the cell?", opts: ["Mitochondria", "Nucleus", "Cell Wall", "Cytoplasm"], ans: 1, pts: 10, level: "highschool" },
     { topic: "English", diff: "medium", q: "Choose the synonym for 'Wealthy':", opts: ["Poor", "Rich", "Greedy", "Famous"], ans: 1, pts: 10, level: "highschool" }
-
   ],
   college: [
     { topic: "English", diff: "hard", q: "'Deconstruction' is a method of analysis associated with:", opts: ["Karl Marx", "Jacques Derrida", "Sigmund Freud", "Plato"], ans: 1, pts: 15, level: "college" },
@@ -413,7 +412,6 @@
     { topic: "Math", diff: "hard", q: "Solve for x: 2x + 5 = 15", opts: ["5", "10", "15", "20"], ans: 0, pts: 15, level: "college" },
     { topic: "Agric Science", diff: "hard", q: "The process of heat treatment of milk to kill germs is:", opts: ["Boiling", "Pasteurization", "Evaporation", "Cooling"], ans: 1, pts: 15, level: "college" },
     { topic: "History", diff: "hard", q: "Who was the leader of the 1966 first military coup?", opts: ["Nzeogwu", "Ironsi", "Gowon", "Ojukwu"], ans: 0, pts: 15, level: "college" }
-    
   ]
 };
 
@@ -484,7 +482,7 @@
     roundTransitioning: false  // guard against double handoff
   };
   let sheetUrl = localStorage.getItem('QuizIntel_sheetUrl') || '';
-  let adminPasscode = localStorage.getItem('QuizIntel_adminPasscode') || 'admin123';
+  let adminPasscode = (localStorage.getItem('QuizIntel_adminPasscode') || 'admin123').trim();
   let isAdminUnlocked = false;
   const savedSound = localStorage.getItem('QuizIntel_soundEnabled');
   if (savedSound !== null) soundEnabled = savedSound === 'true';
@@ -949,19 +947,33 @@
     });
   }
 
-  // ---------------------- Admin & localStorage management ----------------------
+  // ---------------------- Admin & localStorage management (fixed passcode) ----------------------
   function showPasscodePrompt() {
     if (isAdminUnlocked) { showToast('Already unlocked'); return; }
     const pwd = prompt('Enter admin passcode:');
-    if (pwd === adminPasscode) {
+    // Trim entered password to avoid spaces/newline issues
+    if (pwd && pwd.trim() === adminPasscode) {
       isAdminUnlocked = true;
       sheetPanel.classList.add('visible');
       sheetUrlInput.value = sheetUrl;
       const noteDiv = document.getElementById('passcode-note');
       noteDiv.innerHTML = `✅ Admin unlocked. <button id="change-passcode-btn" style="background:none;border:1px solid var(--border);border-radius:20px;padding:2px 8px;margin-left:8px;cursor:pointer;">Change passcode</button>`;
       const changeBtn = document.getElementById('change-passcode-btn');
-      if (changeBtn) changeBtn.onclick = () => { const newPwd = prompt('New admin passcode (keep safe)'); if (newPwd && newPwd.trim()) { adminPasscode = newPwd.trim(); localStorage.setItem('QuizIntel_adminPasscode', adminPasscode); showToast('Passcode updated'); } else if (newPwd === '') showToast('Passcode cannot be empty'); };
-    } else { showToast('Wrong passcode'); }
+      if (changeBtn) {
+        changeBtn.onclick = () => {
+          const newPwd = prompt('New admin passcode (keep safe)');
+          if (newPwd && newPwd.trim()) {
+            adminPasscode = newPwd.trim();
+            localStorage.setItem('QuizIntel_adminPasscode', adminPasscode);
+            showToast('Passcode updated');
+          } else if (newPwd === '') {
+            showToast('Passcode cannot be empty');
+          }
+        };
+      }
+    } else {
+      showToast('Wrong passcode');
+    }
   }
 
   function resetAllData() {
